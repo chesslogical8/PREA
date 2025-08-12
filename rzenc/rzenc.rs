@@ -1,4 +1,4 @@
-// rzenc.rs — "no-deps" file encryption CLI for Windows & Linux
+// main.rs — "no-deps" file encryption CLI for Windows & Linux
 // Design: ChaCha20 stream cipher + HMAC-SHA256 (Encrypt-then-MAC),
 // keys from PBKDF2-HMAC-SHA256 with per-file salt.
 // Randomness: Windows RtlGenRandom; Unix /dev/urandom.
@@ -444,7 +444,8 @@ fn atomic_replace(tmp: &Path, dest: &Path) -> io::Result<()> {
         ) -> i32;
     }
 
-    const REPLACEFILE_WRITE_THROUGH: u32 = 0x00000008;
+    // Use flags = 0; passing write-through is unsupported and causes ERROR_INVALID_PARAMETER (87).
+    let flags: u32 = 0;
 
     fn to_wide(p: &Path) -> Vec<u16> {
         p.as_os_str().encode_wide().chain(std::iter::once(0)).collect()
@@ -457,7 +458,7 @@ fn atomic_replace(tmp: &Path, dest: &Path) -> io::Result<()> {
             replaced.as_ptr(),      // existing file to be replaced
             replacement.as_ptr(),   // replacement file (our temp)
             std::ptr::null(),       // no backup
-            REPLACEFILE_WRITE_THROUGH,
+            flags,
             std::ptr::null_mut(),
             std::ptr::null_mut(),
         )
